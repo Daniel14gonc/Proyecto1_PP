@@ -5,8 +5,8 @@
 #include <vector>
 
 
-#define WIDTH 400
-#define HEIGHT 400
+#define WIDTH 300
+#define HEIGHT 300
 #define SQUARE_SIZE 10
 
 using namespace std;
@@ -92,10 +92,10 @@ class Serpiente {
         }
 
         if (x[0] < 0) {
-            x[0] = WIDTH - x[0];
+            x[0] = WIDTH - SQUARE_SIZE;
         }
         if (y[0] < 0) {
-            y[0] = HEIGHT - y[0];
+            y[0] = HEIGHT - SQUARE_SIZE;
         }
     }
 
@@ -127,6 +127,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
+    //cout <<"MUESTRA"<<(0-50)%100 << endl;
+
     int canvas[WIDTH/SQUARE_SIZE][HEIGHT/SQUARE_SIZE];
     for (int i = 0; i < WIDTH/SQUARE_SIZE; i++) {
         for (int j = 0; j < HEIGHT/SQUARE_SIZE; j++){
