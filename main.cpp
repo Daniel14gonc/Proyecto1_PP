@@ -5,8 +5,8 @@
 #include <vector>
 
 
-#define WIDTH 800
-#define HEIGHT 600
+#define WIDTH 400
+#define HEIGHT 400
 #define SQUARE_SIZE 10
 
 using namespace std;
@@ -24,17 +24,20 @@ class Serpiente {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distribution_x(10, WIDTH);
-        int initial_x = distribution_x(gen);
+        int initial_x = distribution_x(gen) * SQUARE_SIZE;
         std::uniform_int_distribution<> distribution_y(10, HEIGHT);
-        int initial_y = distribution_y(gen);
+        int initial_y = distribution_y(gen) * SQUARE_SIZE;
         len = l;
         x = new int[l];
         y = new int[l];
         std::uniform_int_distribution<> distribution_pos(0, 1);
         int latest = 0;
+        cout << initial_x % WIDTH << endl;
+        cout << initial_y % HEIGHT << endl;
         for (int i = 0; i < l; i++) {
-            x[i] = initial_x;
-            y[i] = initial_y;
+            x[i] = initial_x % WIDTH;
+            y[i] = initial_y % HEIGHT;
+            
         }
         
 
@@ -99,11 +102,15 @@ class Serpiente {
     
 };
 
-void spawn_snakes(Serpiente* serpientes[], int x, int l) {
-    for (int i = x; i < x + 5; i++) {
+int spawn_snakes(Serpiente* serpientes[], int x, int l, int n) {
+    int cont = 0;
+    for (int i = x; i < x + 5 && i < n; i++) {
         Serpiente* serpiente = new Serpiente(l);
         serpientes[i] = serpiente;
+        cont += 1;
     }
+
+    return cont;
 }
 
 
@@ -119,9 +126,10 @@ int main(int argc, char* argv[]) {
             valid = true;
         }
     }
-    int canvas[WIDTH][HEIGHT];
-    for (int i = 0; i < WIDTH; i++) {
-        for (int j = 0; j < HEIGHT; j++){
+    
+    int canvas[WIDTH/SQUARE_SIZE][HEIGHT/SQUARE_SIZE];
+    for (int i = 0; i < WIDTH/SQUARE_SIZE; i++) {
+        for (int j = 0; j < HEIGHT/SQUARE_SIZE; j++){
             canvas[i][j] = -1;
         }
     }
@@ -136,17 +144,18 @@ int main(int argc, char* argv[]) {
         bool quit = false;
         SDL_Event e;
 
-        SDL_Rect squareRect = { 100, 100, 100, 100 };
-        int velocity = 1;
+        // SDL_Rect squareRect = { 100, 100, 100, 100 };
+        // int velocity = 1;
 
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distribution(1, 4);
-
+        
         Serpiente* serpientes[n];
         // for (int i = 0; i < n; i++) {
         //     Serpiente* serpiente = new Serpiente(l);
         //     serpientes[i] = serpiente;
+        //     cout << "creada" << endl;
         // }
 
         int cont = 0;
@@ -160,8 +169,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (cont % 1000 == 0 && current < n) {
-                spawn_snakes(serpientes, current, l);
-                current += 5;
+                current += spawn_snakes(serpientes, current, l, n);
             }
 
             // Clear the renderer
@@ -174,19 +182,19 @@ int main(int argc, char* argv[]) {
                 for (int j = 0; j < len_serpiente; j++) {
 
                     int valid_len = serpientes[i]->len;
-
                     if (j >= valid_len) {
                         continue;
                     }
+                    
 
                     int x = serpiente->x[j];
-                    int y = serpiente->y[j];      
-                    cout << canvas[y][x] << " " << i << endl;
-                    if (canvas[y][x] != i && canvas[y][x] != -1) {
-                        
+                    int y = serpiente->y[j];     
+                    if (j==0 && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != i && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != -1) {
+                        cout << "valid_len " << valid_len << endl;
+                        cout << "colision " << i << endl;
                         int x_eliminada = serpiente->x[valid_len-1];
                         int y_eliminada = serpiente->y[valid_len-1];
-                        canvas[y_eliminada][x_eliminada] = -1;
+                        canvas[y_eliminada/SQUARE_SIZE][x_eliminada/SQUARE_SIZE] = -1;
                         serpiente->colision();
                         SDL_Rect rect_elim = {x_eliminada, y_eliminada, SQUARE_SIZE, SQUARE_SIZE};
                         SDL_RenderFillRect(renderer, &rect_elim);
@@ -196,33 +204,33 @@ int main(int argc, char* argv[]) {
                     }
                     else
                     {
-                        canvas[y][x] = i;
+                        canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] = i;
                         int x_cola = serpiente->x[valid_len-1];
                         int y_cola = serpiente->y[valid_len-1];
-                        canvas[y_cola][x_cola] = -1; 
+                        canvas[y_cola/SQUARE_SIZE][x_cola/SQUARE_SIZE] = -1; 
 
-                    }
 
-                    SDL_Rect rect1 = {x, y, SQUARE_SIZE, SQUARE_SIZE};
-                    SDL_RenderFillRect(renderer, &rect1);
-                    // Draw the square
-                    int r = serpiente->color[0];
-                    int g = serpiente->color[1];
-                    int b = serpiente->color[2];
-                    int a = serpiente->color[3];
-                    if(j!=0 and j%2==0)
-                    {
-                        r = r+25;
-                        g = g-5;
-                        b = b-5;
+                        SDL_Rect rect1 = {x, y, SQUARE_SIZE, SQUARE_SIZE};
+                        SDL_RenderFillRect(renderer, &rect1);
+                        // Draw the square
+                        int r = serpiente->color[0];
+                        int g = serpiente->color[1];
+                        int b = serpiente->color[2];
+                        int a = serpiente->color[3];
+                        if(j!=0 and j%2==0)
+                        {
+                            r = r+25;
+                            g = g-5;
+                            b = b-5;
+                        }
+                        else if (j == 0) {
+                            r = r+5;
+                            g = g-5;
+                            b = b-5;
+                            a = a/2;
+                        }
+                        SDL_SetRenderDrawColor(renderer, r, g, b, a);
                     }
-                    else if (j == 0) {
-                        r = r+5;
-                        g = g-5;
-                        b = b-5;
-                        a = a/2;
-                    }
-                    SDL_SetRenderDrawColor(renderer, r, g, b, a);
                 }
 
 
@@ -234,7 +242,7 @@ int main(int argc, char* argv[]) {
             SDL_RenderPresent(renderer);
 
             // Delay for smooth animation
-            SDL_Delay(40);
+            SDL_Delay(65);
 
             // Reset the drawing color to white
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
