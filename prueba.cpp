@@ -1,46 +1,68 @@
 #include <SDL2/SDL.h>
 
-int main(int argc, char* argv[]) {
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window* window = SDL_CreateWindow("SDL Animation", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0);
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+int main(int argc, char* args[]) {
+    // Inicializa SDL
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL no pudo inicializarse! SDL_Error: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    // Crea una ventana
+    SDL_Window* ventana = SDL_CreateWindow("Calculadora de FPS en SDL", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
+    if (ventana == NULL) {
+        printf("No se pudo crear la ventana! SDL_Error: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    // Crea un renderer
+    SDL_Renderer* renderer = SDL_CreateRenderer(ventana, -1, SDL_RENDERER_ACCELERATED);
+    if (renderer == NULL) {
+        printf("No se pudo crear el renderer! SDL_Error: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    // ...
+
+    // Tu bucle principal del juego
+
+    // Variables para calcular FPS
+    int frames = 0;
+    Uint32 startTime = SDL_GetTicks();
 
     bool quit = false;
-    SDL_Event e;
-
-    SDL_Rect squareRect = { 100, 100, 100, 100 };
-    int velocity = 2;
-
     while (!quit) {
-        while (SDL_PollEvent(&e)) {
+        // Procesa eventos
+        SDL_Event e;
+        while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
                 quit = true;
             }
         }
 
-        // Clear the renderer
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderClear(renderer);
+        // Tu lógica de juego y renderizado aquí
 
-        // Update position
-        squareRect.x += velocity;
+        // Incrementa el contador de frames
+        frames++;
 
-        // Draw the square
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderFillRect(renderer, &squareRect);
+        // Calcula el tiempo transcurrido
+        Uint32 currentTime = SDL_GetTicks();
+        Uint32 deltaTime = currentTime - startTime;
 
-        // Update the screen
-        SDL_RenderPresent(renderer);
+        // Si ha pasado 1 segundo, calcula los FPS
+        if (deltaTime >= 1000) {
+            float fps = frames / (deltaTime / 1000.0f);
+            printf("FPS: %.2f\n", fps);
 
-        // Delay for smooth animation
-        SDL_Delay(10);
-
-        // Reset the drawing color to white
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+            // Reinicia las variables
+            startTime = currentTime;
+            frames = 0;
+        }
     }
 
+    // Libera recursos y cierra SDL
     SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    SDL_DestroyWindow(ventana);
     SDL_Quit();
+
     return 0;
 }

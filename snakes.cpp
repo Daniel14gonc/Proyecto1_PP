@@ -3,13 +3,15 @@
 #include <iostream>
 #include <stdio.h>
 #include <vector>
+#include <time.h>
+#include <chrono>
 
 
-#define WIDTH 300
-#define HEIGHT 300
+#define WIDTH 1000
+#define HEIGHT 1000
 #define SQUARE_SIZE 10
-
 using namespace std;
+
 
 
 class Serpiente {
@@ -20,21 +22,21 @@ class Serpiente {
         int* y;
         int color[4];
     
-    Serpiente(int l) {
+    Serpiente(int largo_serpiente) {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distribution_x(10, WIDTH);
         int initial_x = distribution_x(gen) * SQUARE_SIZE;
         std::uniform_int_distribution<> distribution_y(10, HEIGHT);
         int initial_y = distribution_y(gen) * SQUARE_SIZE;
-        len = l;
-        x = new int[l];
-        y = new int[l];
+        len = largo_serpiente;
+        x = new int[largo_serpiente];
+        y = new int[largo_serpiente];
         std::uniform_int_distribution<> distribution_pos(0, 1);
         int latest = 0;
-        cout << initial_x % WIDTH << endl;
-        cout << initial_y % HEIGHT << endl;
-        for (int i = 0; i < l; i++) {
+        // cout << initial_x % WIDTH << endl;
+        // cout << initial_y % HEIGHT << endl;
+        for (int i = 0; i < largo_serpiente; i++) {
             x[i] = initial_x % WIDTH;
             y[i] = initial_y % HEIGHT;
             
@@ -102,10 +104,10 @@ class Serpiente {
     
 };
 
-int spawn_snakes(Serpiente* serpientes[], int x, int l, int n) {
+int spawn_snakes(Serpiente* serpientes[], int x, int largo_serpiente, int cantidad_serpientes) {
     int cont = 0;
-    for (int i = x; i < x + 5 && i < n; i++) {
-        Serpiente* serpiente = new Serpiente(l);
+    for (int i = x; i < x + 5 && i < cantidad_serpientes; i++) {
+        Serpiente* serpiente = new Serpiente(largo_serpiente);
         serpientes[i] = serpiente;
         cont += 1;
     }
@@ -115,20 +117,21 @@ int spawn_snakes(Serpiente* serpientes[], int x, int l, int n) {
 
 
 int main(int argc, char* argv[]) {
-    int n = 10;
-    int l = 4;
+    double FRAMES_PROMEDIO = 0.0;
+    int cantidad_serpientes = 10;
+    int largo_serpiente = 4;
     bool valid = false;
     if (argc == 3) {
-        n = strtol(argv[1], NULL, 10);
-        l = strtol(argv[2], NULL, 10);
+        cantidad_serpientes = strtol(argv[1], NULL, 10);
+        largo_serpiente = strtol(argv[2], NULL, 10);
 
-        if (n > 0 && l > 0) {
+        if (cantidad_serpientes > 0 && largo_serpiente > 0) {
             valid = true;
         }
     }
     
-    //cout <<"MUESTRA"<<(0-50)%100 << endl;
-
+    
+    auto inicio = std::chrono::high_resolution_clock::now();
     int canvas[WIDTH/SQUARE_SIZE][HEIGHT/SQUARE_SIZE];
     for (int i = 0; i < WIDTH/SQUARE_SIZE; i++) {
         for (int j = 0; j < HEIGHT/SQUARE_SIZE; j++){
@@ -153,15 +156,18 @@ int main(int argc, char* argv[]) {
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distribution(1, 4);
         
-        Serpiente* serpientes[n];
-        // for (int i = 0; i < n; i++) {
-        //     Serpiente* serpiente = new Serpiente(l);
+        Serpiente* serpientes[cantidad_serpientes];
+        // for (int i = 0; i < cantidad_serpientes; i++) {
+        //     Serpiente* serpiente = new Serpiente(largo_serpiente);
         //     serpientes[i] = serpiente;
         //     cout << "creada" << endl;
         // }
 
         int cont = 0;
         int current = 0;
+
+        int frames = 0;
+        Uint32 startTime = SDL_GetTicks();
 
         while (!quit) {
             while (SDL_PollEvent(&e)) {
@@ -170,8 +176,12 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (cont % 1000 == 0 && current < n) {
-                current += spawn_snakes(serpientes, current, l, n);
+            if (cont % 1000 == 0 && current < cantidad_serpientes) {
+                current += spawn_snakes(serpientes, current, largo_serpiente, cantidad_serpientes);
+            }
+
+            if (current == cantidad_serpientes) {
+                quit = true;
             }
 
             // Clear the renderer
@@ -192,8 +202,9 @@ int main(int argc, char* argv[]) {
                     int x = serpiente->x[j];
                     int y = serpiente->y[j];     
                     if (j==0 && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != i && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != -1) {
-                        cout << "valid_len " << valid_len << endl;
-                        cout << "colision " << i << endl;
+                    // if (false) {
+                        // cout << "valid_len " << valid_len << endl;
+                        // cout << "colision " << i << endl;
                         int x_eliminada = serpiente->x[valid_len-1];
                         int y_eliminada = serpiente->y[valid_len-1];
                         canvas[y_eliminada/SQUARE_SIZE][x_eliminada/SQUARE_SIZE] = -1;
@@ -201,7 +212,6 @@ int main(int argc, char* argv[]) {
                         SDL_Rect rect_elim = {x_eliminada, y_eliminada, SQUARE_SIZE, SQUARE_SIZE};
                         SDL_RenderFillRect(renderer, &rect_elim);
                         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                        continue;
                         
                     }
                     else
@@ -244,15 +254,44 @@ int main(int argc, char* argv[]) {
             SDL_RenderPresent(renderer);
 
             // Delay for smooth animation
-            SDL_Delay(65);
+            SDL_Delay(20);
 
             // Reset the drawing color to white
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+            // Incrementa el contador de frames
+            frames++;
+
+            // Calcula el tiempo transcurrido
+            Uint32 currentTime = SDL_GetTicks();
+            Uint32 deltaTime = currentTime - startTime;
+
+            // Si ha pasado 1 segundo, calcula los FPS
+            if (deltaTime >= 1000) {
+                float fps = frames / (deltaTime / 1000.0f);
+                //printf("FPS: %.2f\n", fps);
+
+                // Reinicia las variables
+                startTime = currentTime;
+                frames = 0;
+
+                if (0 == FRAMES_PROMEDIO) {
+                    FRAMES_PROMEDIO = fps;
+                }
+                else
+                {
+                    FRAMES_PROMEDIO = (FRAMES_PROMEDIO + fps) / 2.0;
+                }
+            }
         }
 
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
+        auto fin = std::chrono::high_resolution_clock::now();
+        auto duracion = std::chrono::duration_cast<std::chrono::milliseconds>(fin - inicio);
+        cout << "\nTiempo de ejecución: " << duracion.count()/1000.0 << " segundos" << endl;
+        cout << "FPS promedio: " << FRAMES_PROMEDIO << endl;
     }
     else
     {
