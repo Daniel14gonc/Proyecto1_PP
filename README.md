@@ -1,21 +1,17 @@
 # Proyecto 1
+Creamos un proyecto que crea un screensaver insipirado en el juego de Snake. Hicimos un programa secuencial
+y uno paralelo con OpenMP.
 
 ## Instrucciones para compilar
 
-piSeriesSeq.c
+snakes.cpp
 ```bash
-  gcc -o lab2Secuencial lab2Secuencial.cpp
+  gcc -o snakes snakes.cpp -lSDL2
 ```
-El ejecutable recibe como parámetros la cantidad de números generados y el límite superior de estos aleatorios.
+El ejecutable recibe como parámetros la cantidad de serpientes por generar y su largo.
 
-piSeriesNaive.c
+snakes_parallel.cpp
 ```bash
-  gcc -o lab2Paralelo1 lab2Paralelo1.cpp -fopenmp
+  gcc -o snakes_parallel snakes_parallel.cpp -fopenmp -lSDL2
 ```
-El ejecutable recibe como parámetros la cantidad de números generados y el límite superior de estos aleatorios.
-
-piSeriesNaive_copy.c
-```bash
-  gcc -o lab2Paralelo2 lab2Paralelo2.cpp -fopenmp
-```
-El ejecutable recibe como parámetros la cantidad de números generados y el límite superior de estos aleatorios.
+El ejecutable recibe como parámetros la cantidad de serpientes por generar y su largo.
