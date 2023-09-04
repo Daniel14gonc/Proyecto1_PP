@@ -1,3 +1,14 @@
+/*
+* Integrantes:
+*   - Sebastian Aristondo 20880
+*   - Daniel Gonzalez 20293
+*
+* Descripcion: Programa paralelizado con OpenMP para mostrar un fonde de pantalla
+*   con tematica basada en el juego de Snake. 
+*/
+
+
+
 #include <SDL2/SDL.h>
 #include <random>
 #include <iostream>
@@ -21,7 +32,7 @@ class Serpiente {
         int* x;
         int* y;
         int color[4];
-    
+    // Clase serpiente
     Serpiente(int largo_serpiente) {
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -49,7 +60,7 @@ class Serpiente {
         color[2] = distribution_color(gen);
         color[3] = distribution_intensidad(gen);
     }
-    void colision(){
+    void colision(){//reducir el largo tras una colision
         len -=1;
     }
 
@@ -102,7 +113,7 @@ class Serpiente {
     
 };
 
-
+// Generar serpientes neuvas
 int spawn_snakes(Serpiente* serpientes[], int new_snakes, int largo_serpiente, int cantidad_serpientes) {
     int cont = 0;
 
@@ -134,14 +145,15 @@ int main(int argc, char* argv[]) {
             valid = true;
         }
     }
-
+    // Cantidad de threads a utilizar
     omp_set_num_threads(8);
     
     
-    //cout <<"MUESTRA"<<(0-50)%100 << endl;
+    
     auto inicio = std::chrono::high_resolution_clock::now();
 
     int canvas[WIDTH/SQUARE_SIZE][HEIGHT/SQUARE_SIZE];
+    //Inicializar el canvas
     #pragma omp parallel for
     for (int i = 0; i < WIDTH/SQUARE_SIZE; i++) {
         for (int j = 0; j < HEIGHT/SQUARE_SIZE; j++){
@@ -159,19 +171,13 @@ int main(int argc, char* argv[]) {
         bool quit = false;
         SDL_Event e;
 
-        // SDL_Rect squareRect = { 100, 100, 100, 100 };
-        // int velocity = 1;
+        
 
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> distribution(1, 4);
         
         Serpiente* serpientes[cantidad_serpientes];
-        // for (int i = 0; i < cantidad_serpientes; i++) {
-        //     Serpiente* serpiente = new Serpiente(largo_serpiente);
-        //     serpientes[i] = serpiente;
-        //     cout << "creada" << endl;
-        // }
 
         int cont = 0;
         int current = 0;
@@ -208,19 +214,17 @@ int main(int argc, char* argv[]) {
                 for (int j = 0; j < len_serpiente; j++) {
 
                     int valid_len = serpientes[i]->len;
-                    // if (j >= valid_len) {
-                    //     continue;
-                    // }
+                    
 
+                    // Controlar que las serpientes que ya colisionaron renderizen su tamamno correcto
                     if (j < valid_len) {
                         int x = serpiente->x[j];
                         int y = serpiente->y[j];     
                         #pragma omp critical
                         {
+                            // Existe una colision
                             if (j==0 && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != i && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != -1) {
-                            // if (false) {
-                                // cout << "valid_len " << valid_len << endl;
-                                // cout << "colision " << i << endl;
+                            
                                 int x_eliminada = serpiente->x[valid_len-1];
                                 int y_eliminada = serpiente->y[valid_len-1];
                                 canvas[y_eliminada/SQUARE_SIZE][x_eliminada/SQUARE_SIZE] = -1;
@@ -230,7 +234,7 @@ int main(int argc, char* argv[]) {
                                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                                 
                             }
-                            else
+                            else //No existe colision
                             {
                                 canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] = i;
                                 int x_cola = serpiente->x[valid_len-1];
@@ -245,6 +249,8 @@ int main(int argc, char* argv[]) {
                                 int g = serpiente->color[1];
                                 int b = serpiente->color[2];
                                 int a = serpiente->color[3];
+
+                                //Alternar colores del cuerpo de la serpiente
                                 if(j!=0 and j%2==0)
                                 {
                                     r = r+25;
@@ -310,6 +316,10 @@ int main(int argc, char* argv[]) {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
+
+        for (int i = 0; i < cantidad_serpientes; i++) {
+            delete serpientes[i];
+        }
 
         double end = omp_get_wtime();
         double time = end - start;

@@ -1,3 +1,13 @@
+/*
+* Integrantes:
+*   - Sebastian Aristondo 20880
+*   - Daniel Gonzalez 20293
+*
+* Descripcion: Programa secuencial para mostrar un fonde de pantalla
+*   con tematica basada en el juego de Snake. 
+*/
+
+
 #include <SDL2/SDL.h>
 #include <random>
 #include <iostream>
@@ -34,8 +44,6 @@ class Serpiente {
         y = new int[largo_serpiente];
         std::uniform_int_distribution<> distribution_pos(0, 1);
         int latest = 0;
-        // cout << initial_x % WIDTH << endl;
-        // cout << initial_y % HEIGHT << endl;
         for (int i = 0; i < largo_serpiente; i++) {
             x[i] = initial_x % WIDTH;
             y[i] = initial_y % HEIGHT;
@@ -103,7 +111,7 @@ class Serpiente {
 
     
 };
-
+// Generacion de serpientes 
 int spawn_snakes(Serpiente* serpientes[], int x, int largo_serpiente, int cantidad_serpientes) {
     int cont = 0;
     for (int i = x; i < x + 5 && i < cantidad_serpientes; i++) {
@@ -121,6 +129,9 @@ int main(int argc, char* argv[]) {
     int cantidad_serpientes = 10;
     int largo_serpiente = 4;
     bool valid = false;
+
+    // Validacion y almacenamiento de argumentos de linea de comandos para cantidad de serpientes
+    // y su largo.
     if (argc == 3) {
         cantidad_serpientes = strtol(argv[1], NULL, 10);
         largo_serpiente = strtol(argv[2], NULL, 10);
@@ -132,6 +143,8 @@ int main(int argc, char* argv[]) {
     
     
     auto inicio = std::chrono::high_resolution_clock::now();
+
+    // Creacion de canvas para almacenar las posiciones de las serpientes.
     int canvas[WIDTH/SQUARE_SIZE][HEIGHT/SQUARE_SIZE];
     for (int i = 0; i < WIDTH/SQUARE_SIZE; i++) {
         for (int j = 0; j < HEIGHT/SQUARE_SIZE; j++){
@@ -142,6 +155,7 @@ int main(int argc, char* argv[]) {
     
     if (valid)
     {
+        // Inicializacion de SDL para mostrar las serpientes.
         SDL_Init(SDL_INIT_VIDEO);
         SDL_Window* window = SDL_CreateWindow("SDL Animation", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, 0);
         SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -157,11 +171,6 @@ int main(int argc, char* argv[]) {
         std::uniform_int_distribution<> distribution(1, 4);
         
         Serpiente* serpientes[cantidad_serpientes];
-        // for (int i = 0; i < cantidad_serpientes; i++) {
-        //     Serpiente* serpiente = new Serpiente(largo_serpiente);
-        //     serpientes[i] = serpiente;
-        //     cout << "creada" << endl;
-        // }
 
         int cont = 0;
         int current = 0;
@@ -169,6 +178,7 @@ int main(int argc, char* argv[]) {
         int frames = 0;
         Uint32 startTime = SDL_GetTicks();
 
+        // Main loop
         while (!quit) {
             while (SDL_PollEvent(&e)) {
                 if (e.type == SDL_QUIT) {
@@ -176,24 +186,31 @@ int main(int argc, char* argv[]) {
                 }
             }
 
+            // En cada iteracion del main loop se crean nuevas serpientes.
             if (cont % 1000 == 0 && current < cantidad_serpientes) {
                 current += spawn_snakes(serpientes, current, largo_serpiente, cantidad_serpientes);
             }
 
+            // Si la cantidad de serpientes llega a su limite, se acaba el programa.
             if (current == cantidad_serpientes) {
                 quit = true;
             }
 
-            // Clear the renderer
+            // Limpiar renderer
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
             SDL_RenderClear(renderer);
 
+            // Ciclo que evalua colisiones entre serpientes.
             for (int i = 0; i < current; i++) {
                 Serpiente* serpiente = serpientes[i];
                 int len_serpiente = serpiente->len;
+                // Se realiza un ciclo por cada elemento del cuerpo de la serpiente. Se evalua si la cabeza
+                // tiene una colision con el cuerpo de alguna otra y se actualiza la posicion de la serpiente
+                // en el canvas, ademas de renderizar.
                 for (int j = 0; j < len_serpiente; j++) {
 
                     int valid_len = serpientes[i]->len;
+                    // En caso ya no se deba renderiza porque el largo es menor a j.
                     if (j >= valid_len) {
                         continue;
                     }
@@ -201,13 +218,14 @@ int main(int argc, char* argv[]) {
 
                     int x = serpiente->x[j];
                     int y = serpiente->y[j];     
+
+                    // Verificacion de colision de serpiente.
                     if (j==0 && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != i && canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] != -1) {
-                    // if (false) {
-                        // cout << "valid_len " << valid_len << endl;
-                        // cout << "colision " << i << endl;
+                        // Se obtiene la cola de la serpiente, que es lo que se debe eliminar.
                         int x_eliminada = serpiente->x[valid_len-1];
                         int y_eliminada = serpiente->y[valid_len-1];
                         canvas[y_eliminada/SQUARE_SIZE][x_eliminada/SQUARE_SIZE] = -1;
+                        // Se le indica a la serpiente que tuvo una colision.
                         serpiente->colision();
                         SDL_Rect rect_elim = {x_eliminada, y_eliminada, SQUARE_SIZE, SQUARE_SIZE};
                         SDL_RenderFillRect(renderer, &rect_elim);
@@ -216,6 +234,7 @@ int main(int argc, char* argv[]) {
                     }
                     else
                     {
+                        // Se actualiza la posicion de la serpiente en canvas.
                         canvas[y/SQUARE_SIZE][x/SQUARE_SIZE] = i;
                         int x_cola = serpiente->x[valid_len-1];
                         int y_cola = serpiente->y[valid_len-1];
@@ -224,7 +243,7 @@ int main(int argc, char* argv[]) {
 
                         SDL_Rect rect1 = {x, y, SQUARE_SIZE, SQUARE_SIZE};
                         SDL_RenderFillRect(renderer, &rect1);
-                        // Draw the square
+                        // Se obtienen los colores de la serpiente para renderizar.
                         int r = serpiente->color[0];
                         int g = serpiente->color[1];
                         int b = serpiente->color[2];
@@ -245,7 +264,7 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
-
+                // Se le asigna un movimiento random a la serpiente.
                 serpiente->movimiento(distribution(gen));
             }
 
@@ -283,6 +302,10 @@ int main(int argc, char* argv[]) {
                     FRAMES_PROMEDIO = (FRAMES_PROMEDIO + fps) / 2.0;
                 }
             }
+        }
+
+        for (int i = 0; i < cantidad_serpientes; i++) {
+            delete serpientes[i];
         }
 
         SDL_DestroyRenderer(renderer);
