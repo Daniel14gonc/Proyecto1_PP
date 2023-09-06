@@ -296,7 +296,7 @@ int main(int argc, char* argv[]) {
             // Si ha pasado 1 segundo, calcula los FPS
             if (deltaTime >= 1000) {
                 float fps = frames / (deltaTime / 1000.0f);
-                //printf("FPS: %.2f\n", fps);
+                printf("FPS: %.2f\n", fps);
 
                 // Reinicia las variables
                 startTime = currentTime;
